@@ -46,7 +46,7 @@ def add_padding(image_path, save_path):
         else:
             if width > height:
                 new_img = img.resize((width, width))  
-            elif (height > width):
+            elif height > width:
                 new_img = img.resize((height, height))  
             else:
                 new_img = img
