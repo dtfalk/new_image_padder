@@ -46,8 +46,10 @@ def add_padding(image_path, save_path):
         else:
             if width > height:
                 new_img = img.resize((width, width))  
-            else:
+            elif (height > width):
                 new_img = img.resize((height, height))  
+            else:
+                new_img = img
 
         new_img.save(save_path)
 
@@ -168,6 +170,7 @@ def process_images():
     else:
         error_message = "All images failed to process:\n" + "\n".join([f"{err[0]}: {err[1]}" for err in errors])
         show_large_messagebox("Processing Error", error_message, error=True)
+    reset_selection()
 
 def exit_app():
     root.destroy()
