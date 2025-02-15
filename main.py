@@ -2,7 +2,6 @@ import os
 import tkinter as tk
 from tkinter import filedialog, ttk
 from PIL import Image
-import platform
 import json
 
 CONFIG_FILE = "config.json"
@@ -89,10 +88,11 @@ def update_preview():
 
 def show_large_messagebox(title, message, error=False):
     popup = tk.Toplevel(root)
+    popup.configure(bg="white", highlightthickness=0)
     popup.title(title)
     popup.geometry("600x150")
     popup.resizable(False, False)
-    ttk.Label(popup, text=message, font=("Arial", 13), wraplength=550).pack(pady=20, padx=20)
+    ttk.Label(popup, text=message, wraplength=550, style="Popup.TLabel").pack(pady=20, padx=20)
     ttk.Button(popup, text="OK", command=popup.destroy, style="Large.TButton").pack(pady=10)
 
 def on_single_click(event):
@@ -134,13 +134,12 @@ def process_images():
     if not folder_path:
         show_large_messagebox("Error", "No destination folder selected! Please select a save location.", error=True)
         return
-
-    progress_bar.pack(fill="x", pady=5)  # Show the progress bar above the two side-by-side buttons
+    placeholder_label.pack_forget()
+    progress_bar.pack()
+    progress_bar["value"] = 0
     progress_bar["maximum"] = len(image_paths)
-
     errors = []
     processed_count = 0
-
     for i, img in enumerate(image_paths, start=1):
         progress_bar["value"] = i
         root.update_idletasks()
@@ -150,18 +149,15 @@ def process_images():
             errors.append(error)
         else:
             processed_count += 1
-
     progress_bar.pack_forget()
-
+    placeholder_label.pack(fill="both", expand=True)
     if processed_count > 0:
         success_message = f"Successfully processed {processed_count} image(s)."
         if errors:
-            success_message += "\nHowever, the following image(s) failed to process:\n" \
-                               + "\n".join([f"{err[0]}: {err[1]}" for err in errors])
+            success_message += "\nHowever, the following image(s) failed to process:\n" + "\n".join([f"{err[0]}: {err[1]}" for err in errors])
         show_large_messagebox("Process Complete", success_message)
     else:
-        error_message = "All images failed to process:\n" \
-                        + "\n".join([f"{err[0]}: {err[1]}" for err in errors])
+        error_message = "All images failed to process:\n" + "\n".join([f"{err[0]}: {err[1]}" for err in errors])
         show_large_messagebox("Processing Error", error_message, error=True)
 
 def exit_app():
@@ -172,53 +168,29 @@ root.title("Image Padding App")
 root.geometry("800x800")
 root.minsize(100, 100)
 root.after(100, lambda: bring_to_front(root))
-
 load_config()
-
 style = ttk.Style()
+style.theme_use("clam")
 style.layout("NoHeading.Treeview.Heading", [])
 style.configure("NoHeading.Treeview.Heading", borderwidth=0)
-style.configure("TButton", padding=10, font=("Arial", 13))
-style.configure("Large.TButton", padding=12, font=("Arial", 15))
+style.configure("TButton", padding=10, font=("Arial", 13), background="#dcdcdc")
+style.configure("Large.TButton", padding=12, font=("Arial", 15), background="#dcdcdc")
 style.configure("TLabel", font=("Arial", 13, "bold"))
-
-canvas = tk.Canvas(root)
-canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=canvas.yview)
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-canvas.configure(yscrollcommand=scrollbar.set)
-
-frame = ttk.Frame(canvas, padding=20)
-window_id = canvas.create_window((0, 0), window=frame, anchor="nw")
-
-def on_canvas_configure(event):
-    canvas_width = event.width
-    canvas.itemconfig(window_id, width=canvas_width - 5)
-    canvas.configure(scrollregion=canvas.bbox("all"))
-
-canvas.bind("<Configure>", on_canvas_configure)
-
+style.configure("Popup.TLabel", background="white", font=("Arial", 13))
+style.configure("green.Horizontal.TProgressbar", foreground="green", background="green")
+frame = ttk.Frame(root, padding=20)
+frame.pack(fill="both", expand=True)
 def create_separator():
     ttk.Separator(frame, orient="horizontal").pack(fill="x", pady=15)
-
 ttk.Label(frame, text="Select Images to Process").pack()
-
-# Frame to hold the two side-by-side "Select" buttons
 select_buttons_frame = ttk.Frame(frame)
 select_buttons_frame.pack(fill="x", pady=10)
-
-# "Select Image(s)" on the left, "Select Folder of Images" on the right
 select_btn = ttk.Button(select_buttons_frame, text="Select Individual Image(s)", command=select_images)
 select_btn.pack(side="left", expand=True, fill="x", padx=(0, 5))
-
 select_folder_images_btn = ttk.Button(select_buttons_frame, text="Select Folder of Images", command=select_folder_images)
 select_folder_images_btn.pack(side="left", expand=True, fill="x", padx=(5, 0))
-
 selected_count_label = ttk.Label(frame, text="Images Selected: 0", wraplength=600, font=("Arial", 12, "bold"))
 selected_count_label.pack()
-
 preview_list = ttk.Treeview(
     frame,
     columns=("filename", "remove"),
@@ -229,14 +201,11 @@ preview_list = ttk.Treeview(
 preview_list.column("filename", anchor="w", width=600, stretch=True)
 preview_list.column("remove", anchor="center", width=20, minwidth=20, stretch=False)
 preview_list.pack(fill="both", expand=True, pady=10)
-
 item_path_map = {}
 preview_list.bind("<Button-1>", on_single_click)
 preview_list.bind("<Double-Button-1>", on_double_click)
-
 reset_btn = ttk.Button(frame, text="Reset Image Selection", command=reset_selection)
 reset_btn.pack(fill="x", pady=10)
-
 create_separator()
 ttk.Label(frame, text="Select Destination Folder").pack()
 folder_btn = ttk.Button(frame, text="Select Folder", command=select_folder)
@@ -248,31 +217,22 @@ folder_label = ttk.Label(
     font=("Arial", 12)
 )
 folder_label.pack()
-
 create_separator()
-
-
-# The progress bar will appear here, *above* the two side-by-side buttons
-progress_bar = ttk.Progressbar(frame, orient="horizontal", length=300, mode="determinate")
-progress_bar.pack_forget()
-
-# Frame to hold the "Process Images" + "Exit" buttons side by side
+progress_bar_frame = ttk.Frame(frame, height=30)
+progress_bar_frame.pack(fill="x", pady=(10, 10))
+placeholder_label = ttk.Label(progress_bar_frame, text="")
+placeholder_label.pack(fill="both", expand=True)
+progress_bar = ttk.Progressbar(
+    progress_bar_frame,
+    orient="horizontal",
+    length=300,
+    mode="determinate",
+    style="green.Horizontal.TProgressbar"
+)
 buttons_frame = ttk.Frame(frame)
 buttons_frame.pack(fill="x", pady=10)
-
 exit_btn = ttk.Button(buttons_frame, text="Exit Application", command=exit_app)
 exit_btn.pack(side="left", expand=True, fill="x", padx=(0, 5))
-
 process_btn = ttk.Button(buttons_frame, text="Process Images", command=process_images)
 process_btn.pack(side="left", expand=True, fill="x", padx=(5, 0))
-
-
-def _on_mousewheel(event):
-    if platform.system() == 'Darwin':
-        canvas.yview_scroll(-event.delta, "units")
-    else:
-        canvas.yview_scroll(int(-event.delta / 120), "units")
-
-canvas.bind_all("<MouseWheel>", _on_mousewheel)
-
 root.mainloop()
