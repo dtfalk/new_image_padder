@@ -50,7 +50,7 @@ def add_padding(image_path, save_path):
 def select_images():
     global image_paths
     selected_images = filedialog.askopenfilenames(
-        filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff")]
+        filetypes=[("Image Files", "*.png *.jpg *.jpeg *.bmp *.gif *.tiff")]
     )
     add_unique_images(selected_images)
 
@@ -173,8 +173,9 @@ style = ttk.Style()
 style.theme_use("clam")
 style.layout("NoHeading.Treeview.Heading", [])
 style.configure("NoHeading.Treeview.Heading", borderwidth=0)
-style.configure("TButton", padding=10, font=("Arial", 13), background="#dcdcdc")
-style.configure("Large.TButton", padding=12, font=("Arial", 15), background="#dcdcdc")
+# --- Button style changes for macOS ---
+style.configure("TButton", padding=10, font=("Arial", 13), background="#dcdcdc", foreground="black")
+style.configure("Large.TButton", padding=12, font=("Arial", 15), background="#dcdcdc", foreground="black")
 style.configure("TLabel", font=("Arial", 13, "bold"))
 style.configure("Popup.TLabel", background="white", font=("Arial", 13))
 style.configure("green.Horizontal.TProgressbar", foreground="green", background="green")
