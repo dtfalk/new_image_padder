@@ -5,6 +5,7 @@ from tkinter.filedialog import askdirectory, askopenfilenames
 from PIL import Image
 import json
 
+
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 
 def bring_to_front(root):
@@ -37,18 +38,16 @@ def add_padding(image_path, save_path):
         img = Image.open(image_path)
         width, height = img.size
 
-        if abs(width - height) > 25:
-            # If the difference is significant, add padding as before
+        if abs(width - height) > 100:
             max_size = max(width, height)
             new_img = Image.new("RGB", (max_size, max_size), "black")
             paste_position = ((max_size - width) // 2, (max_size - height) // 2)
             new_img.paste(img, paste_position)
         else:
-            # If the difference is small, stretch the smaller dimension
             if width > height:
-                new_img = img.resize((width, width))  # Stretch height
+                new_img = img.resize((width, width))  
             else:
-                new_img = img.resize((height, height))  # Stretch width
+                new_img = img.resize((height, height))  
 
         new_img.save(save_path)
 
@@ -152,7 +151,6 @@ def process_images():
     processed_count = 0
     for i, img in enumerate(image_paths, start=1):
         progress_bar["value"] = i
-        # Updated line: using update() to ensure the progress bar refreshes properly on macOS.
         root.update()  
         save_name = os.path.join(folder_path, os.path.basename(img))
         error = add_padding(img, save_name)
