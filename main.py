@@ -18,6 +18,10 @@ def load_config():
         with open(CONFIG_FILE, "r") as file:
             config = json.load(file)
             folder_path = config.get("save_folder", "")
+            if not folder_path == "":
+                if not os.path.exists(folder_path):
+                   folder_path = "" 
+                   save_config()
     else:
         folder_path = ""
     image_paths = []
