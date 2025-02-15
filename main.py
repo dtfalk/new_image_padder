@@ -4,7 +4,7 @@ from tkinter import filedialog, ttk
 from PIL import Image
 import json
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 
 def bring_to_front(root):
     root.attributes('-topmost', 1)
