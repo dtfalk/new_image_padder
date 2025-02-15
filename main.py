@@ -1,6 +1,7 @@
 import os
-import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import Toplevel, Tk
+from tkinter.ttk import Label, Button, Style, Frame, Separator, Treeview, Progressbar
+from tkinter.filedialog import askdirectory, askopenfilenames
 from PIL import Image
 import json
 
@@ -26,7 +27,7 @@ def save_config():
 
 def select_folder():
     global folder_path
-    folder_path = filedialog.askdirectory()
+    folder_path = askdirectory()
     if folder_path:
         folder_label.config(text=f"Save To: {folder_path}")
         save_config()
@@ -35,28 +36,37 @@ def add_padding(image_path, save_path):
     try:
         img = Image.open(image_path)
         width, height = img.size
-        if abs(width - height) > 5:
+
+        if abs(width - height) > 25:
+            # If the difference is significant, add padding as before
             max_size = max(width, height)
             new_img = Image.new("RGB", (max_size, max_size), "black")
             paste_position = ((max_size - width) // 2, (max_size - height) // 2)
             new_img.paste(img, paste_position)
-            new_img.save(save_path)
         else:
-            img.save(save_path)
+            # If the difference is small, stretch the smaller dimension
+            if width > height:
+                new_img = img.resize((width, width))  # Stretch height
+            else:
+                new_img = img.resize((height, height))  # Stretch width
+
+        new_img.save(save_path)
+
     except Exception as e:
         return os.path.basename(image_path), str(e)
+
     return None
 
 def select_images():
     global image_paths
-    selected_images = filedialog.askopenfilenames(
+    selected_images = askopenfilenames(
         filetypes=[("Image Files", "*.png *.jpg *.jpeg *.bmp *.gif *.tiff")]
     )
     add_unique_images(selected_images)
 
 def select_folder_images():
     global image_paths
-    folder_selected = filedialog.askdirectory()
+    folder_selected = askdirectory()
     if folder_selected:
         selected_images = [
             os.path.join(folder_selected, f) for f in os.listdir(folder_selected)
@@ -87,13 +97,13 @@ def update_preview():
     selected_count_label.config(text=f"Images Selected: {len(image_paths)}")
 
 def show_large_messagebox(title, message, error=False):
-    popup = tk.Toplevel(root)
+    popup = Toplevel(root)
     popup.configure(bg="white", highlightthickness=0)
     popup.title(title)
     popup.geometry("600x150")
     popup.resizable(False, False)
-    ttk.Label(popup, text=message, wraplength=550, style="Popup.TLabel").pack(pady=20, padx=20)
-    ttk.Button(popup, text="OK", command=popup.destroy, style="Large.TButton").pack(pady=10)
+    Label(popup, text=message, wraplength=550, style="Popup.TLabel").pack(pady=20, padx=20)
+    Button(popup, text="OK", command=popup.destroy, style="Large.TButton").pack(pady=10)
 
 def on_single_click(event):
     item_id = preview_list.identify_row(event.y)
@@ -164,13 +174,13 @@ def process_images():
 def exit_app():
     root.destroy()
 
-root = tk.Tk()
+root = Tk()
 root.title("Image Padding App")
 root.geometry("800x800")
 root.minsize(100, 100)
 root.after(100, lambda: bring_to_front(root))
 load_config()
-style = ttk.Style()
+style = Style()
 style.theme_use("clam")
 style.layout("NoHeading.Treeview.Heading", [])
 style.configure("NoHeading.Treeview.Heading", borderwidth=0)
@@ -179,20 +189,20 @@ style.configure("Large.TButton", padding=12, font=("Arial", 15), background="#dc
 style.configure("TLabel", font=("Arial", 13, "bold"))
 style.configure("Popup.TLabel", background="white", font=("Arial", 13))
 style.configure("green.Horizontal.TProgressbar", foreground="green", background="green")
-frame = ttk.Frame(root, padding=20)
+frame = Frame(root, padding=20)
 frame.pack(fill="both", expand=True)
 def create_separator():
-    ttk.Separator(frame, orient="horizontal").pack(fill="x", pady=15)
-ttk.Label(frame, text="Select Images to Process").pack()
-select_buttons_frame = ttk.Frame(frame)
+    Separator(frame, orient="horizontal").pack(fill="x", pady=15)
+Label(frame, text="Select Images to Process").pack()
+select_buttons_frame = Frame(frame)
 select_buttons_frame.pack(fill="x", pady=10)
-select_btn = ttk.Button(select_buttons_frame, text="Select Individual Image(s)", command=select_images)
+select_btn = Button(select_buttons_frame, text="Select Individual Image(s)", command=select_images)
 select_btn.pack(side="left", expand=True, fill="x", padx=(0, 5))
-select_folder_images_btn = ttk.Button(select_buttons_frame, text="Select Folder of Images", command=select_folder_images)
+select_folder_images_btn = Button(select_buttons_frame, text="Select Folder of Images", command=select_folder_images)
 select_folder_images_btn.pack(side="left", expand=True, fill="x", padx=(5, 0))
-selected_count_label = ttk.Label(frame, text="Images Selected: 0", wraplength=600, font=("Arial", 12, "bold"))
+selected_count_label = Label(frame, text="Images Selected: 0", wraplength=600, font=("Arial", 12, "bold"))
 selected_count_label.pack()
-preview_list = ttk.Treeview(
+preview_list = Treeview(
     frame,
     columns=("filename", "remove"),
     show="headings",
@@ -205,13 +215,13 @@ preview_list.pack(fill="both", expand=True, pady=10)
 item_path_map = {}
 preview_list.bind("<Button-1>", on_single_click)
 preview_list.bind("<Double-Button-1>", on_double_click)
-reset_btn = ttk.Button(frame, text="Reset Image Selection", command=reset_selection)
+reset_btn = Button(frame, text="Reset Image Selection", command=reset_selection)
 reset_btn.pack(fill="x", pady=10)
 create_separator()
-ttk.Label(frame, text="Select Destination Folder").pack()
-folder_btn = ttk.Button(frame, text="Select Folder", command=select_folder)
+Label(frame, text="Select Destination Folder").pack()
+folder_btn = Button(frame, text="Select Folder", command=select_folder)
 folder_btn.pack(fill="x", pady=10)
-folder_label = ttk.Label(
+folder_label = Label(
     frame,
     text=f"Save To: {folder_path if folder_path else 'Not Selected'}",
     wraplength=600,
@@ -219,21 +229,21 @@ folder_label = ttk.Label(
 )
 folder_label.pack()
 create_separator()
-progress_bar_frame = ttk.Frame(frame, height=30)
+progress_bar_frame = Frame(frame, height=30)
 progress_bar_frame.pack(fill="x", pady=(10, 10))
-placeholder_label = ttk.Label(progress_bar_frame, text="")
+placeholder_label = Label(progress_bar_frame, text="")
 placeholder_label.pack(fill="both", expand=True)
-progress_bar = ttk.Progressbar(
+progress_bar = Progressbar(
     progress_bar_frame,
     orient="horizontal",
     length=300,
     mode="determinate",
     style="green.Horizontal.TProgressbar"
 )
-buttons_frame = ttk.Frame(frame)
+buttons_frame = Frame(frame)
 buttons_frame.pack(fill="x", pady=10)
-exit_btn = ttk.Button(buttons_frame, text="Exit Application", command=exit_app)
+exit_btn = Button(buttons_frame, text="Exit Application", command=exit_app)
 exit_btn.pack(side="left", expand=True, fill="x", padx=(0, 5))
-process_btn = ttk.Button(buttons_frame, text="Process Images", command=process_images)
+process_btn = Button(buttons_frame, text="Process Images", command=process_images)
 process_btn.pack(side="left", expand=True, fill="x", padx=(5, 0))
 root.mainloop()
