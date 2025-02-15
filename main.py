@@ -142,7 +142,8 @@ def process_images():
     processed_count = 0
     for i, img in enumerate(image_paths, start=1):
         progress_bar["value"] = i
-        root.update_idletasks()
+        # Updated line: using update() to ensure the progress bar refreshes properly on macOS.
+        root.update()  
         save_name = os.path.join(folder_path, os.path.basename(img))
         error = add_padding(img, save_name)
         if error:
@@ -173,7 +174,6 @@ style = ttk.Style()
 style.theme_use("clam")
 style.layout("NoHeading.Treeview.Heading", [])
 style.configure("NoHeading.Treeview.Heading", borderwidth=0)
-# --- Button style changes for macOS ---
 style.configure("TButton", padding=10, font=("Arial", 13), background="#dcdcdc", foreground="black")
 style.configure("Large.TButton", padding=12, font=("Arial", 15), background="#dcdcdc", foreground="black")
 style.configure("TLabel", font=("Arial", 13, "bold"))
