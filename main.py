@@ -24,6 +24,7 @@ def load_config():
                    save_config()
     else:
         folder_path = ""
+
     image_paths = []
 
 def save_config():
@@ -41,6 +42,11 @@ def add_padding(image_path, save_path):
     try:
         img = Image.open(image_path)
         width, height = img.size
+
+        # check if we want to skip an image
+        if os.path.exists(save_path):
+            if (max(width, height), max(width, height)) == Image.open(save_path).size:
+                return
 
         if abs(width - height) > 100:
             max_size = max(width, height)
@@ -142,13 +148,20 @@ def on_double_click(event):
         selected_count_label.config(text=f"Images Selected: {len(image_paths)}")
 
 def process_images():
-    global image_paths
+    global image_paths, folder_path
     if not image_paths:
         show_large_messagebox("Error", "No images selected! Please select images to process.", error=True)
         return
     if not folder_path:
         show_large_messagebox("Error", "No destination folder selected! Please select a save location.", error=True)
         return
+    if not os.path.exists(folder_path):
+        show_large_messagebox("Error", "The destination folder no longer exists! Please select a new save location.", error=True)
+        folder_path = ""
+        update_preview()
+        save_config()
+        return
+
     placeholder_label.pack_forget()
     progress_bar.pack()
     progress_bar["value"] = 0
@@ -178,6 +191,7 @@ def process_images():
 
 def exit_app():
     root.destroy()
+
 
 root = Tk()
 root.title("Image Padding App")
