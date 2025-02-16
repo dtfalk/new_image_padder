@@ -40,28 +40,32 @@ def select_folder():
 
 def add_padding(image_path, save_path):
     try:
-        img = Image.open(image_path)
-        width, height = img.size
-
-        # check if we want to skip an image
-        if os.path.exists(save_path):
-            if (max(width, height), max(width, height)) == Image.open(save_path).size:
-                return
-
-        if abs(width - height) > 100:
+            
+        with Image.open(image_path) as img:
+            width, height = img.size
             max_size = max(width, height)
-            new_img = Image.new("RGB", (max_size, max_size), "black")
-            paste_position = ((max_size - width) // 2, (max_size - height) // 2)
-            new_img.paste(img, paste_position)
-        else:
-            if width > height:
-                new_img = img.resize((width, width))  
-            elif height > width:
-                new_img = img.resize((height, height))  
-            else:
-                new_img = img
+            padding = int((max(width, height)) * 0.05)
 
+            # check if we want to skip an image
+            if os.path.exists(save_path):
+                if (max_size + (2 * padding), max_size + (2 * padding)) == Image.open(save_path).size:
+                    return
+
+            if abs(width - height) > 100:
+                new_img = Image.new("RGB", (max_size, max_size), "black")
+                paste_position = ((max_size - width) // 2, (max_size - height) // 2)
+                new_img.paste(img, paste_position)
+            else:
+                new_img = img.resize((max_size, max_size))
+
+        # Add 15 pixels of black padding at the very end
+        padded_width = new_img.width + padding * 2
+        padded_height = new_img.height + padding * 2
+        padded_img = Image.new("RGB", (padded_width, padded_height), "black")
+        padded_img.paste(new_img, (padding, padding))
+        new_img = padded_img
         new_img.save(save_path)
+
 
     except Exception as e:
         return os.path.basename(image_path), str(e)
@@ -171,7 +175,7 @@ def process_images():
     for i, img in enumerate(image_paths, start=1):
         progress_bar["value"] = i
         root.update()  
-        save_name = os.path.join(folder_path, os.path.basename(img))
+        save_name = os.path.normpath(os.path.join(folder_path, os.path.basename(img)))
         error = add_padding(img, save_name)
         if error:
             errors.append(error)
